@@ -93,10 +93,14 @@ router.put("/:contactId", async (req, res, next) => {
     const { contactId } = req.params;
     const body = req.body;
 
-    if (Object.keys(body).length === 0) {
-      const error = new Error("missing fields");
-      error.status = 400;
-      throw error;
+    const { error } = schema.validate(body);
+    if (error) {
+      const handleError = new Error();
+      error.details[0].type === "any.required"
+        ? (handleError.message = "missing fields")
+        : (handleError.message = error.message);
+      handleError.status = 400;
+      throw handleError;
     }
 
     const updatedContact = await updateContact(contactId, body);
