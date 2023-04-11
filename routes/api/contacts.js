@@ -1,4 +1,5 @@
 const express = require("express");
+const Joi = require("joi");
 
 const {
   listContacts,
@@ -9,6 +10,16 @@ const {
 } = require("../../models/contacts");
 
 const router = express.Router();
+
+const schema = Joi.object({
+  name: Joi.string().required(),
+  email: Joi.string().email({ minDomainSegments: 2 }).required(),
+  phone: Joi.string()
+    .pattern(/\(?([0-9]{3})\)?([ .-]?)([0-9]{3})([ .-]?)([0-9]{4})/, {
+      name: "numbers",
+    })
+    .required(),
+});
 
 router.get("/", async (req, res, next) => {
   try {
@@ -42,12 +53,14 @@ router.post("/", async (req, res, next) => {
   try {
     const body = req.body;
 
-    for (const key in body) {
-      if (!body[key]) {
-        const error = new Error("missing required name field");
-        error.status = 400;
-        throw error;
-      }
+    const { error } = schema.validate(body);
+    if (error) {
+      const handleError = new Error();
+      error.details[0].type === "any.required"
+        ? (handleError.message = "missing required name field")
+        : (handleError.message = error.message);
+      handleError.status = 400;
+      throw handleError;
     }
 
     const newContact = await addContact(body);
@@ -95,8 +108,8 @@ router.put("/:contactId", async (req, res, next) => {
     }
 
     res.json(updatedContact);
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 });
 
