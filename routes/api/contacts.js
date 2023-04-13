@@ -1,5 +1,4 @@
 const express = require("express");
-const Joi = require("joi");
 
 const {
   listContacts,
@@ -9,18 +8,9 @@ const {
   updateContact,
 } = require("../../models/contacts");
 
-const router = express.Router();
+const { schemaAllRequired, schemaNoRequired } = require("../../models/schemas");
 
-const schema = Joi.object({
-  name: Joi.string().required(),
-  email: Joi.string().email({ minDomainSegments: 2 }).required(),
-  phone: Joi.string()
-    .pattern(/\(?([0-9]{3})\)?([ .-]?)([0-9]{3})([ .-]?)([0-9]{4,4})/, {
-      name: "numbers",
-    })
-    .max(14)
-    .required(),
-});
+const router = express.Router();
 
 router.get("/", async (req, res, next) => {
   try {
@@ -54,7 +44,7 @@ router.post("/", async (req, res, next) => {
   try {
     const body = req.body;
 
-    const { error } = schema.validate(body);
+    const { error } = schemaAllRequired.validate(body);
     if (error) {
       const handleError = new Error();
       error.details[0].type === "any.required"
@@ -89,15 +79,15 @@ router.delete("/:contactId", async (req, res, next) => {
   }
 });
 
-router.put("/:contactId", async (req, res, next) => {
+router.patch("/:contactId", async (req, res, next) => {
   try {
     const { contactId } = req.params;
     const body = req.body;
 
-    const { error } = schema.validate(body);
+    const { error } = schemaNoRequired.validate(body);
     if (error) {
       const handleError = new Error();
-      error.details[0].type === "any.required"
+      error.details[0].type === "object.min"
         ? (handleError.message = "missing fields")
         : (handleError.message = error.message);
       handleError.status = 400;
