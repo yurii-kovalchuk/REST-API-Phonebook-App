@@ -7,7 +7,7 @@ const getAll = async (_, res) => {
   res.json(contacts);
 };
 
-const getById = async (req, res) => {
+const getOneContact = async (req, res) => {
   const { contactId } = req.params;
 
   const queryContact = await Contact.findById(contactId);
@@ -79,10 +79,38 @@ const updateContact = async (req, res) => {
   res.json(updatedContact);
 };
 
+const updateFavoritesField = async (req, res) => {
+  const { contactId } = req.params;
+  const body = req.body;
+
+  // const { error } = schemaNoRequired.validate(body);
+  // if (error) {
+  //   const handleError = new Error();
+  //   error.details[0].type === "object.min"
+  //     ? (handleError.message = "missing fields")
+  //     : (handleError.message = error.message);
+  //   handleError.status = 400;
+  //   throw handleError;
+  // }
+
+  const updatedContact = await Contact.findByIdAndUpdate(contactId, body, {
+    new: true,
+  });
+
+  if (!updatedContact) {
+    const error = new Error("There is no contact with this id");
+    error.status = 404;
+    throw error;
+  }
+
+  res.json(updatedContact);
+};
+
 module.exports = {
   getAll: funcShell(getAll),
-  getById: funcShell(getById),
+  getOneContact: funcShell(getOneContact),
   addContact: funcShell(addContact),
   deleteContact: funcShell(deleteContact),
   updateContact: funcShell(updateContact),
+  updateFavoritesField: funcShell(updateFavoritesField),
 };
