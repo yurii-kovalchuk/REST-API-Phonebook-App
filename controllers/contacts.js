@@ -1,4 +1,12 @@
-const Contact = require("../models/contact");
+const { isValidObjectId } = require("mongoose");
+
+const {
+  Contact,
+  schemaAllRequired,
+  schemaNoRequired,
+  schemaForFavorite,
+} = require("../models/contact");
+
 const { funcShell } = require("../utils");
 
 const getAll = async (_, res) => {
@@ -24,15 +32,15 @@ const getOneContact = async (req, res) => {
 const addContact = async (req, res) => {
   const { body } = req;
 
-  // const { error } = schemaAllRequired.validate(body);
-  // if (error) {
-  //   const handleError = new Error();
-  //   error.details[0].type === "any.required"
-  //     ? (handleError.message = "missing required name field")
-  //     : (handleError.message = error.message);
-  //   handleError.status = 400;
-  //   throw handleError;
-  // }
+  const { error } = schemaAllRequired.validate(body);
+  if (error) {
+    const handleError = new Error();
+    error.details[0].type === "any.required"
+      ? (handleError.message = "missing required field")
+      : (handleError.message = error.message);
+    handleError.status = 400;
+    throw handleError;
+  }
 
   const newContact = await Contact.create(body);
 
@@ -56,15 +64,21 @@ const updateContact = async (req, res) => {
   const { contactId } = req.params;
   const body = req.body;
 
-  // const { error } = schemaNoRequired.validate(body);
-  // if (error) {
-  //   const handleError = new Error();
-  //   error.details[0].type === "object.min"
-  //     ? (handleError.message = "missing fields")
-  //     : (handleError.message = error.message);
-  //   handleError.status = 400;
-  //   throw handleError;
-  // }
+  const { error } = schemaNoRequired.validate(body);
+  if (error) {
+    const handleError = new Error();
+    error.details[0].type === "object.min"
+      ? (handleError.message = "missing fields")
+      : (handleError.message = error.message);
+    handleError.status = 400;
+    throw handleError;
+  }
+
+  if (!isValidObjectId(contactId)) {
+    const error = new Error("Id is not valid");
+    error.status = 404;
+    throw error;
+  }
 
   const updatedContact = await Contact.findByIdAndUpdate(contactId, body, {
     new: true,
@@ -79,26 +93,32 @@ const updateContact = async (req, res) => {
   res.json(updatedContact);
 };
 
-const updateFavoritesField = async (req, res) => {
+const updateStatusContact = async (req, res) => {
   const { contactId } = req.params;
   const body = req.body;
 
-  // const { error } = schemaNoRequired.validate(body);
-  // if (error) {
-  //   const handleError = new Error();
-  //   error.details[0].type === "object.min"
-  //     ? (handleError.message = "missing fields")
-  //     : (handleError.message = error.message);
-  //   handleError.status = 400;
-  //   throw handleError;
-  // }
+  const { error } = schemaForFavorite.validate(body);
+  if (error) {
+    const handleError = new Error();
+    error.details[0].type === "object.min"
+      ? (handleError.message = "missing field favorite")
+      : (handleError.message = error.message);
+    handleError.status = 400;
+    throw handleError;
+  }
+
+  if (!isValidObjectId(contactId)) {
+    const error = new Error("Id is not valid");
+    error.status = 404;
+    throw error;
+  }
 
   const updatedContact = await Contact.findByIdAndUpdate(contactId, body, {
     new: true,
   });
 
   if (!updatedContact) {
-    const error = new Error("There is no contact with this id");
+    const error = new Error("Not found");
     error.status = 404;
     throw error;
   }
@@ -112,5 +132,5 @@ module.exports = {
   addContact: funcShell(addContact),
   deleteContact: funcShell(deleteContact),
   updateContact: funcShell(updateContact),
-  updateFavoritesField: funcShell(updateFavoritesField),
+  updateStatusContact: funcShell(updateStatusContact),
 };

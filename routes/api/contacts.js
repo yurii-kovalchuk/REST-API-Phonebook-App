@@ -6,10 +6,8 @@ const {
   addContact,
   deleteContact,
   updateContact,
-  updateFavoritesField,
+  updateStatusContact,
 } = require("../../controllers/contacts");
-
-// const { schemaAllRequired, schemaNoRequired } = require("../../models/schemas");
 
 const router = express.Router();
 
@@ -23,6 +21,6 @@ router.delete("/:contactId", deleteContact);
 
 router.patch("/:contactId", updateContact);
 
-router.patch("/:contactId/favorite", updateFavoritesField);
+router.patch("/:contactId/favorite", updateStatusContact);
 
 module.exports = router;
