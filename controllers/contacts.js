@@ -1,5 +1,3 @@
-const { isValidObjectId } = require("mongoose");
-
 const {
   Contact,
   schemaAllRequired,
@@ -17,10 +15,6 @@ const getAll = async (_, res) => {
 
 const getOneContact = async (req, res) => {
   const { contactId } = req.params;
-
-  if (!isValidObjectId(contactId)) {
-    throw HandleError(400, "Id is not valid");
-  }
 
   const queryContact = await Contact.findById(contactId);
 
@@ -51,10 +45,6 @@ const addContact = async (req, res) => {
 const deleteContact = async (req, res) => {
   const { contactId } = req.params;
 
-  if (!isValidObjectId(contactId)) {
-    throw HandleError(400, "Id is not valid");
-  }
-
   const deletedContact = await Contact.findByIdAndRemove(contactId);
 
   if (!deletedContact) {
@@ -73,10 +63,6 @@ const updateContact = async (req, res) => {
     const message =
       error.details[0].type === "object.min" ? "missing fields" : error.message;
     throw HandleError(400, message);
-  }
-
-  if (!isValidObjectId(contactId)) {
-    throw HandleError(400, "Id is not valid");
   }
 
   const updatedContact = await Contact.findByIdAndUpdate(contactId, body, {
@@ -101,10 +87,6 @@ const updateStatusContact = async (req, res) => {
         ? "missing field favorite"
         : error.message;
     throw HandleError(400, message);
-  }
-
-  if (!isValidObjectId(contactId)) {
-    throw HandleError(400, "Id is not valid");
   }
 
   const updatedContact = await Contact.findByIdAndUpdate(contactId, body, {
