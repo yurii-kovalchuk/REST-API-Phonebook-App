@@ -4,7 +4,6 @@ const {
   schemaNoRequired,
   schemaForFavorite,
 } = require("../models/contact");
-
 const { funcShell, HandleError } = require("../utils");
 
 const getAll = async (_, res) => {

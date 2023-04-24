@@ -1,7 +1,6 @@
 const express = require("express");
 
 const { isValidId } = require("../../middlewares");
-
 const {
   getAll,
   getOneContact,
