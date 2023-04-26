@@ -6,8 +6,9 @@ const {
 } = require("../models/contact");
 const { funcShell, HandleError } = require("../utils");
 
-const getAll = async (_, res) => {
-  const contacts = await Contact.find();
+const getAll = async (req, res) => {
+  const { _id: owner } = req.user;
+  const contacts = await Contact.find({ owner });
 
   res.json(contacts);
 };
@@ -18,7 +19,7 @@ const getOneContact = async (req, res) => {
   const queryContact = await Contact.findById(contactId);
 
   if (queryContact === null) {
-    throw HandleError(404, "Not found");
+    throw HandleError(404);
   }
 
   res.json(queryContact);
@@ -49,7 +50,7 @@ const deleteContact = async (req, res) => {
   const deletedContact = await Contact.findByIdAndRemove(contactId);
 
   if (!deletedContact) {
-    throw HandleError(404, "Not found");
+    throw HandleError(404);
   }
 
   res.json({ message: "contact deleted" });
@@ -71,7 +72,7 @@ const updateContact = async (req, res) => {
   });
 
   if (!updatedContact) {
-    throw HandleError(404, "Not found");
+    throw HandleError(404);
   }
 
   res.json(updatedContact);
@@ -95,7 +96,7 @@ const updateStatusContact = async (req, res) => {
   });
 
   if (!updatedContact) {
-    throw HandleError(404, "Not found");
+    throw HandleError(404);
   }
 
   res.json(updatedContact);
