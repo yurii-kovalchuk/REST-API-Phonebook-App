@@ -68,8 +68,17 @@ const logout = async (req, res) => {
   res.status(204).json();
 };
 
+const getCurrent = async (req, res) => {
+  const { email, subscription } = req.user;
+  res.status(200).json({
+    email,
+    subscription,
+  });
+};
+
 module.exports = {
   register: funcShell(register),
   login: funcShell(login),
   logout: funcShell(logout),
+  getCurrent: funcShell(getCurrent),
 };
