@@ -8,7 +8,10 @@ const { funcShell, HandleError } = require("../utils");
 
 const getAll = async (req, res) => {
   const { _id: owner } = req.user;
-  const contacts = await Contact.find({ owner });
+
+  const { favorite = null } = req.query;
+  const favoriteKey = favorite !== null ? "favorite" : null;
+  const contacts = await Contact.find({ owner, [favoriteKey]: favorite });
 
   res.json(contacts);
 };
