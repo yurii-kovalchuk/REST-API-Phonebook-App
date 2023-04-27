@@ -1,7 +1,12 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 
-const { User, registerSchema, loginSchema } = require("../models/user");
+const {
+  User,
+  registerSchema,
+  loginSchema,
+  schemaForSubscription,
+} = require("../models/user");
 const { funcShell, HandleError } = require("../utils");
 
 const { SECRET_KEY } = process.env;
@@ -76,9 +81,33 @@ const getCurrent = async (req, res) => {
   });
 };
 
+const updateSubscription = async (req, res) => {
+  const { body } = req;
+  const { _id: id } = req.user;
+
+  const { error } = schemaForSubscription.validate(body);
+  if (error) {
+    throw HandleError(400);
+  }
+
+  const updatedUser = await User.findByIdAndUpdate(id, body, {
+    new: true,
+  });
+
+  if (!updatedUser) {
+    throw HandleError(404);
+  }
+
+  res.json({
+    email: updatedUser.email,
+    subscription: updatedUser.subscription,
+  });
+};
+
 module.exports = {
   register: funcShell(register),
   login: funcShell(login),
   logout: funcShell(logout),
   getCurrent: funcShell(getCurrent),
+  updateSubscription: funcShell(updateSubscription),
 };
