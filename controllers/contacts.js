@@ -23,9 +23,10 @@ const getAll = async (req, res) => {
 };
 
 const getOneContact = async (req, res) => {
-  const { contactId } = req.params;
+  const { _id: owner } = req.user;
+  const { contactId: _id } = req.params;
 
-  const queryContact = await Contact.findById(contactId);
+  const queryContact = await Contact.findOne({ _id, owner });
 
   if (queryContact === null) {
     throw HandleError(404);
@@ -54,9 +55,10 @@ const addContact = async (req, res) => {
 };
 
 const deleteContact = async (req, res) => {
-  const { contactId } = req.params;
+  const { _id: owner } = req.user;
+  const { contactId: _id } = req.params;
 
-  const deletedContact = await Contact.findByIdAndRemove(contactId);
+  const deletedContact = await Contact.findOneAndRemove({ _id, owner });
 
   if (!deletedContact) {
     throw HandleError(404);
@@ -66,7 +68,8 @@ const deleteContact = async (req, res) => {
 };
 
 const updateContact = async (req, res) => {
-  const { contactId } = req.params;
+  const { _id: owner } = req.user;
+  const { contactId: _id } = req.params;
   const body = req.body;
 
   const { error } = schemaNoRequired.validate(body);
@@ -76,7 +79,7 @@ const updateContact = async (req, res) => {
     throw HandleError(400, message);
   }
 
-  const updatedContact = await Contact.findByIdAndUpdate(contactId, body, {
+  const updatedContact = await Contact.findOneAndUpdate({ _id, owner }, body, {
     new: true,
   });
 
@@ -88,7 +91,8 @@ const updateContact = async (req, res) => {
 };
 
 const updateStatusContact = async (req, res) => {
-  const { contactId } = req.params;
+  const { _id: owner } = req.user;
+  const { contactId: _id } = req.params;
   const body = req.body;
 
   const { error } = schemaForFavorite.validate(body);
@@ -100,7 +104,7 @@ const updateStatusContact = async (req, res) => {
     throw HandleError(400, message);
   }
 
-  const updatedContact = await Contact.findByIdAndUpdate(contactId, body, {
+  const updatedContact = await Contact.findByIdAndUpdate({ _id, owner }, body, {
     new: true,
   });
 
