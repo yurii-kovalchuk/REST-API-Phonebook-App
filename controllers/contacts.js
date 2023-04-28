@@ -1,29 +1,35 @@
-const { isValidObjectId } = require("mongoose");
-
 const {
   Contact,
   schemaAllRequired,
   schemaNoRequired,
   schemaForFavorite,
 } = require("../models/contact");
+const { funcShell, HandleError } = require("../utils");
 
-const { funcShell } = require("../utils");
+const getAll = async (req, res) => {
+  const { _id: owner } = req.user;
+  const { favorite = null, page = 1, limit = 5 } = req.query;
 
-const getAll = async (_, res) => {
-  const contacts = await Contact.find();
+  const skip = (page - 1) * limit;
+  const favoriteKey = favorite !== null ? "favorite" : null;
+
+  const contacts = await Contact.find(
+    { owner, [favoriteKey]: favorite },
+    null,
+    { skip, limit }
+  );
 
   res.json(contacts);
 };
 
 const getOneContact = async (req, res) => {
-  const { contactId } = req.params;
+  const { _id: owner } = req.user;
+  const { contactId: _id } = req.params;
 
-  const queryContact = await Contact.findById(contactId);
+  const queryContact = await Contact.findOne({ _id, owner });
 
   if (queryContact === null) {
-    const error = new Error("Not found");
-    error.status = 404;
-    throw error;
+    throw HandleError(404);
   }
 
   res.json(queryContact);
@@ -34,93 +40,76 @@ const addContact = async (req, res) => {
 
   const { error } = schemaAllRequired.validate(body);
   if (error) {
-    const handleError = new Error();
-    error.details[0].type === "any.required"
-      ? (handleError.message = "missing required field")
-      : (handleError.message = error.message);
-    handleError.status = 400;
-    throw handleError;
+    const message =
+      error.details[0].type === "any.required"
+        ? "missing required field"
+        : error.message;
+    throw HandleError(400, message);
   }
 
-  const newContact = await Contact.create(body);
+  const { _id: owner } = req.user;
+
+  const newContact = await Contact.create({ ...body, owner });
 
   res.status(201).json(newContact);
 };
 
 const deleteContact = async (req, res) => {
-  const { contactId } = req.params;
+  const { _id: owner } = req.user;
+  const { contactId: _id } = req.params;
 
-  const deletedContact = await Contact.findByIdAndRemove(contactId);
+  const deletedContact = await Contact.findOneAndRemove({ _id, owner });
 
   if (!deletedContact) {
-    const error = new Error("Not found");
-    error.status = 404;
-    throw error;
+    throw HandleError(404);
   }
+
   res.json({ message: "contact deleted" });
 };
 
 const updateContact = async (req, res) => {
-  const { contactId } = req.params;
+  const { _id: owner } = req.user;
+  const { contactId: _id } = req.params;
   const body = req.body;
 
   const { error } = schemaNoRequired.validate(body);
   if (error) {
-    const handleError = new Error();
-    error.details[0].type === "object.min"
-      ? (handleError.message = "missing fields")
-      : (handleError.message = error.message);
-    handleError.status = 400;
-    throw handleError;
+    const message =
+      error.details[0].type === "object.min" ? "missing fields" : error.message;
+    throw HandleError(400, message);
   }
 
-  if (!isValidObjectId(contactId)) {
-    const error = new Error("Id is not valid");
-    error.status = 404;
-    throw error;
-  }
-
-  const updatedContact = await Contact.findByIdAndUpdate(contactId, body, {
+  const updatedContact = await Contact.findOneAndUpdate({ _id, owner }, body, {
     new: true,
   });
 
   if (!updatedContact) {
-    const error = new Error("There is no contact with this id");
-    error.status = 404;
-    throw error;
+    throw HandleError(404);
   }
 
   res.json(updatedContact);
 };
 
 const updateStatusContact = async (req, res) => {
-  const { contactId } = req.params;
+  const { _id: owner } = req.user;
+  const { contactId: _id } = req.params;
   const body = req.body;
 
   const { error } = schemaForFavorite.validate(body);
   if (error) {
-    const handleError = new Error();
-    error.details[0].type === "object.min"
-      ? (handleError.message = "missing field favorite")
-      : (handleError.message = error.message);
-    handleError.status = 400;
-    throw handleError;
+    const message =
+      error.details[0].type === "object.min"
+        ? "missing field favorite"
+        : error.message;
+    throw HandleError(400, message);
   }
 
-  if (!isValidObjectId(contactId)) {
-    const error = new Error("Id is not valid");
-    error.status = 404;
-    throw error;
-  }
-
-  const updatedContact = await Contact.findByIdAndUpdate(contactId, body, {
+  const updatedContact = await Contact.findByIdAndUpdate({ _id, owner }, body, {
     new: true,
   });
 
   if (!updatedContact) {
-    const error = new Error("Not found");
-    error.status = 404;
-    throw error;
+    throw HandleError(404);
   }
 
   res.json(updatedContact);
