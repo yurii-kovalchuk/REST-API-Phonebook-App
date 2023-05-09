@@ -1,6 +1,6 @@
 const funcShell = require("./funсShell");
 const handleMongooseError = require("./handleMongooseError");
 const HandleError = require("./handleError");
-const sendMail = require("./sendMail");
+const sendEmail = require("./sendEmail");
 
-module.exports = { funcShell, handleMongooseError, HandleError, sendMail };
+module.exports = { funcShell, handleMongooseError, HandleError, sendEmail };
