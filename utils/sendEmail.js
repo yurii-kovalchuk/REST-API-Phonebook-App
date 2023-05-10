@@ -1,6 +1,5 @@
 const nodemailer = require("nodemailer");
 
-
 const config = {
     host: "sandbox.smtp.mailtrap.io",
     port: 2525,
