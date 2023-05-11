@@ -4,16 +4,18 @@ const gravatar = require("gravatar");
 const path = require("path");
 const fs = require("fs/promises");
 const Jimp = require("jimp");
+const { nanoid } = require("nanoid");
 
 const {
   User,
   registerSchema,
   loginSchema,
   schemaForSubscription,
+  schemaForEmail,
 } = require("../models/user");
-const { funcShell, HandleError } = require("../utils");
+const { funcShell, HandleError, sendEmail } = require("../utils");
 
-const { SECRET_KEY } = process.env;
+const { SECRET_KEY, BASE_URL } = process.env;
 const avatarDir = path.join(__dirname, "../", "public", "avatars");
 
 const register = async (req, res) => {
@@ -31,17 +33,78 @@ const register = async (req, res) => {
 
   const hashPass = await bcrypt.hash(body.password, 10);
   const avatarURL = gravatar.url(body.email);
+  const verificationToken = nanoid();
+
   const newUser = await User.create({
     ...body,
     password: hashPass,
     avatarURL,
+    verificationToken,
   });
+
+  const verifyEmail = {
+    to: body.email,
+    subject: "Verify email",
+    html: `<a target="_blank" href="${BASE_URL}/api/users/verify/${verificationToken}">Click to verify your email </a>`,
+  };
+
+  await sendEmail(verifyEmail);
 
   res.status(201).json({
     user: {
       email: newUser.email,
       subscription: newUser.subscription,
     },
+  });
+};
+
+const verifyEmail = async (req, res) => {
+  const { verificationToken } = req.params;
+  const user = await User.findOne({ verificationToken });
+
+  if (!user) {
+    throw HandleError(404, "User not found");
+  }
+
+  await User.findByIdAndUpdate(user._id, {
+    verificationToken: null,
+    verify: true,
+  });
+
+  res.status(200).json({ message: "Verification successful" });
+};
+
+const resendVerifyEmail = async (req, res) => {
+  const { email } = req.body;
+
+  const { error } = schemaForEmail.validate(req.body);
+  if (error) {
+    const message =
+      error.details[0].type === "any.required"
+        ? "missing required field email"
+        : error.message;
+    throw HandleError(400, message);
+  }
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    throw HandleError(404, "User not found");
+  }
+
+  if (user.verify) {
+    throw HandleError(400, "Verification has already been passed");
+  }
+
+  const verifyEmail = {
+    to: email,
+    subject: "Verify email",
+    html: `<a target="_blank" href="${BASE_URL}/api/users/verify/${user.verificationToken}">Click to verify your email </a>`,
+  };
+
+  await sendEmail(verifyEmail);
+
+  res.status(200).json({
+    message: "Verification email sent",
   });
 };
 
@@ -61,6 +124,10 @@ const login = async (req, res) => {
   const passCompare = await bcrypt.compare(password, user.password);
   if (!passCompare) {
     throw HandleError(401, "Email or password is wrong");
+  }
+
+  if (!user.verify) {
+    throw HandleError(401, "Email not verified");
   }
 
   const payload = { id: user._id };
@@ -143,4 +210,6 @@ module.exports = {
   getCurrent: funcShell(getCurrent),
   updateSubscription: funcShell(updateSubscription),
   updateAvatar: funcShell(updateAvatar),
+  verifyEmail: funcShell(verifyEmail),
+  resendVerifyEmail: funcShell(resendVerifyEmail),
 };
